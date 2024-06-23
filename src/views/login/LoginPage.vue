@@ -1,7 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { User, Lock } from '@element-plus/icons-vue'
 import { userRegisterService } from '@/api/user.js'
+import { userLoginService } from '@/api/user.js'
+import { useUserStore } from '@/stores'
+import { useRouter } from 'vue-router'
+const userStore = useUserStore()
+const router = useRouter()
 const isRegister = ref(true)
 const formModel = ref({
   username: '',
@@ -44,6 +49,22 @@ const register = async () => {
   // 切换到登录
   isRegister.value = false
 }
+
+const login = async () => {
+  await form.value.validate()
+  const res = await userLoginService(formModel.value)
+  userStore.setToken(res.data.token)
+  ElMessage.success('登陆成功')
+  router.push('/')
+}
+
+watch(isRegister, () => {
+  formModel.value = {
+    username: '',
+    password: '',
+    repassword: ''
+  }
+})
 </script>
 
 <template>
@@ -100,15 +121,26 @@ const register = async () => {
         </el-form-item>
       </el-form>
 
-      <!-- <el-form v-else size="large" autocomplete="off">
+      <el-form
+        v-else
+        size="large"
+        autocomplete="off"
+        :model="formModel"
+        ref="form"
+      >
         <el-form-item>
           <h1>登录</h1>
         </el-form-item>
-        <el-form-item>
-          <el-input :prefix-icon="User" placeholder="用户名"></el-input>
-        </el-form-item>
-        <el-form-item>
+        <el-form-item prop="username">
           <el-input
+            :prefix-icon="User"
+            placeholder="用户名"
+            v-model="formModel.username"
+          ></el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input
+            v-model="formModel.password"
             :prefix-icon="Lock"
             placeholder="密码"
             type="password"
@@ -120,9 +152,20 @@ const register = async () => {
             <el-checkbox>记住我</el-checkbox>
             <el-link type="primary" :underline="false">忘记密码</el-link>
           </div>
+          <el-form-item>
+            <el-button
+              type="primary"
+              class="button"
+              auto-insert-space
+              @click="login"
+              >登录</el-button
+            >
+          </el-form-item>
         </el-form-item>
-        <el-link type="info" :underline="false" @click="isRegister = true">注册→</el-link>
-      </el-form> -->
+        <el-link type="info" :underline="false" @click="isRegister = true"
+          >注册→</el-link
+        >
+      </el-form>
     </el-col>
   </el-row>
 </template>
